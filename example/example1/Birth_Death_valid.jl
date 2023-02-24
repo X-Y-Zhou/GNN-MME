@@ -10,8 +10,6 @@ default(lw=3, msw=0., label=false)
 N = 39;  # truncation
 
 ## Load training set
-#train_path = "$(pwd())/Documents/GEM_GNN/example/example1"
-#train_path = "$(pwd())"
 train_path = "example/example1"
 
 # model destructure define
@@ -56,14 +54,13 @@ end
 tf = 20.0;  # ODE solver end time
 tspan = (0, tf);  # Time range
 tstep = 0.1; # Sampling time step
-#ssa_path = "$(pwd())/Documents/GEM_GNN/example/example1/data"
-#ssa_path = "$(pwd())/data"
 ssa_path = "example/example1/data"
 
 VT = 13  # Number of cells
+grids = "C" # grids
+
 ### attention!!!!
-#test_ssa_path = "$(ssa_path)/$(VT)_cells_grids"  # Path of test data
-test_ssa_path = "$(ssa_path)/$(VT)_cells_C"
+test_ssa_path = "$(ssa_path)/$(VT)_cells_$grids" # Path of test data
 proba_list = [reshape(readdlm("$(test_ssa_path)/proba/cell_$(v).csv", ','), (N+1, 1, 201)) for v in 1:VT]  # Read distribution data
 test_ssa_proba = cat(proba_list..., dims=2)
 params = readdlm("$(test_ssa_path)/params.csv", ',')  # Read parameter file
@@ -76,18 +73,18 @@ graph = Dict(); @load "$(test_ssa_path)/graph.bson" graph
 test_prob = ODEProblem((du, u, p, t) -> CME!(du, u, p, t; Graph=graph, D=sparse_D(rho, d)), u0, tspan, p);
 @time sol = Array(solve(test_prob, Tsit5(), p=p, saveat=tstep));
 
+#=
 for i = 1 : VT
     solt = sol[:,i,:]
     writedlm("$(test_ssa_path)/proba/cell_$(i)_pred.csv",solt,',')
 end
-
+=#
 
 fig_colors = reshape(palette(:tab10)[:], 1, :);
 fig_labels = reshape(["cell $i" for i in 1:VT], 1, VT);
 plot(xlims=(0, 30), ylims=(0, 0.3), grids=false, size=(500, 300))
-plot!(sol[1:30, :, end], c=fig_colors, label=fig_labels, ylims=(0, 0.3));
+plot!(sol[1:30, :, end], c=fig_colors, label=fig_labels, ylims=(0, 0.3))
 plot!(test_ssa_proba[1:30, :, end], st=:scatter, ms=5, c=fig_colors)
-# savefig("./Figures/example1/VT=2_version_3.pdf")
 
 #
 figures = Any[];
@@ -100,4 +97,4 @@ for i in 1:9
     push!(figures, subfig)
 end
 f = plot(figures..., layout = grid(3, 3), size = (800, 600))
-# savefig("./Figures/example1/VT=$(VT)_grids.pdf")
+#savefig("Figures/example1/VT=$(VT)_$grids.pdf")

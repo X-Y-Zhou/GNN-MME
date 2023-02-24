@@ -10,7 +10,8 @@ default(lw=3, msw=0., label=false)
 N = 39;  # Truncation
 
 ## Load training set
-ssa_path = "$(pwd())/Documents/GEM_GNN/example/example1/data"
+ssa_path = "example/example1/data"
+
 data_path = vcat(["$ssa_path/2_cells_v$(i)" for i in 1:3]...)
 VTs = [2, 2, 2]
 ssa_proba = Array{Any, 1}(undef, length(data_path))

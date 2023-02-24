@@ -171,7 +171,7 @@ sol_Ps = cat([sol[:, i, :] for i in 2:2:(2*VT)]..., dims=3);
 
 ##Visualize all grids
 fig_colors = reshape(palette(:tab10)[:], 1, :);
-t = length(tpoints) # plot time points we want
+t = 41 # time = 20s
 # Plot the distribution of the whole cell
 plt_idx = [1:6; 12:17; 23:28; 34:39; 45:50; 56:61]  # 11 * 11
 # The plots sharing the axis parameters (the axis in the middle part is not displayed)
