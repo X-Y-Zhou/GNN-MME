@@ -1,7 +1,0 @@
-{
-        "remote.SSH.defaultForwardedPorts": [
-        
-        ],
-        "julia.persistentSession.enabled": true,
-        "terminal.integrated.persistentSessionReviveProcess": "never"
-    }
