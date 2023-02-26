@@ -5,7 +5,7 @@
 This repository contains the julia code and parameters corresponding to the effeciency test presented in:
 Efficient and scalable prediction of spatio-temporal stochastic gene expression in cells and tissues using graph neural networks
 
-File descriptions:
+**File descriptions:**
 
 - "Figure2_a-c/data/2_cells_v1/proba/cell_1.csv" is the source data
 - "Figure2_a-c/data/2_cells_v1/proba/cell_1_pred.csv" is the predicted data
@@ -14,7 +14,7 @@ File descriptions:
 - "p.bson" is the trained parameters
 - "results" summarizes the experimental data from literature for Fig. 2,FigS3 (inset)
 
-Requirements:
+**Requirements:**
 
 - Julia >= 1.4.2
 - Flux v0.13.5
