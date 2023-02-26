@@ -56,8 +56,8 @@ tspan = (0, tf);  # Time range
 tstep = 0.1; # Sampling time step
 ssa_path = "example/example1/data"
 
-VT = 13  # Number of cells
-grids = "C" # grids
+VT = 16  # Number of cells
+grids = "E" # grids
 
 ### attention!!!!
 test_ssa_path = "$(ssa_path)/$(VT)_cells_$grids" # Path of test data
@@ -80,21 +80,22 @@ for i = 1 : VT
 end
 =#
 
-fig_colors = reshape(palette(:tab10)[:], 1, :);
-fig_labels = reshape(["cell $i" for i in 1:VT], 1, VT);
+fig_colors = reshape(palette(:turbo)[:], 1, :)
+fig_labels = reshape(["cell $i" for i in 1:VT], 1, VT)
+
 plot(xlims=(0, 30), ylims=(0, 0.3), grids=false, size=(500, 300))
 plot!(sol[1:30, :, end], c=fig_colors, label=fig_labels, ylims=(0, 0.3))
 plot!(test_ssa_proba[1:30, :, end], st=:scatter, ms=5, c=fig_colors)
 
 #
 figures = Any[];
-fig_xticks = [[false for _ in 1:6]; [true for _ in 1:3]]
-fig_yticks = vcat([[true; false; false;] for _ in 1:3]...)
-for i in 1:9
+fig_xticks = [[false for _ in 1:12]; [true for _ in 1:4]]
+fig_yticks = vcat([[true; false; false; false] for _ in 1:4]...)
+for i in 1:16
     subfig = plot(xlims=(0, 30), ylims=(0, 0.3), xticks=fig_xticks[i], yticks=fig_yticks[i], grids=false)
-    subfig = plot!(sol[1:30, i, end], c=fig_colors[i], label=fig_labels[i]);
-    subfig = plot!(test_ssa_proba[1:30, i, end], st=:scatter, ms=5, c=fig_colors[i]);
+    subfig = plot!(sol[1:30, i, end], c=fig_colors[16*i], label=fig_labels[i]);
+    subfig = plot!(test_ssa_proba[1:30, i, end], st=:scatter, ms=5, c=fig_colors[16*i]);
     push!(figures, subfig)
 end
-f = plot(figures..., layout = grid(3, 3), size = (800, 600))
+f = plot(figures..., layout = grid(4, 4), size = (800, 600))
 #savefig("Figures/example1/VT=$(VT)_$grids.pdf")
