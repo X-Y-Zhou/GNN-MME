@@ -6,21 +6,19 @@ This repository contains the julia code and parameters corresponding to the effe
 Efficient and scalable prediction of spatio-temporal stochastic gene expression in cells and tissues using graph neural networks
 
 **File descriptions:**
-
-- "Figure2_a-c/data/2_cells_v1/proba/cell_1.csv" is the training data
-- "Figure2_a-c/data/2_cells_v1/proba/cell_1_pred.csv" is the predicted data
-- "Figure2_a-c/Birth_Death_train.jl" is the code for training.
-- "Figure2_a-c/Birth_Death_valid.jl" is the code for predicting Cell "ECUST".
-- "p.bson" is the trained parameters
-- "results" summarizes the experimental data from literature for Fig. 2,FigS3 (inset)
+- "Fig2a-c/data/2_cells_v1/proba/cell_1.csv" is the training data
+- "Fig2a-c/data/2_cells_v1/proba/cell_1_pred.csv" is the predicted distribution
+- "Fig2a-c/Birth_Death_train.jl" is the training code.
+- "Fig2a-c/Birth_Death_valid.jl" is the code for predicting cell "E","C","U","S" and "T".
+- "p.bson" stores the trained parameters
+- "Results" summarizes the predicting results for Fig.2, FigS4 and FigS5(inset).
 
 **Requirements:**
-
-- Julia >= 1.4.2
-- Flux v0.13.5
-- DifferentialEquations v7.2.0
-- DiffEqSensitivity v6.79.0
-- Zygote v0.6.46
+- Julia >= 1.6.5
+- Flux v0.12.8
+- DifferentialEquations v7.0.0
+- DiffEqSensitivity v6.66.0
+- Zygote v0.6.33
 
 **The method is well described in:**
 * Z. Cao _et. al._ [Efficient and scalable prediction of spatio-temporal stochastic gene expression in cells and tissues using graph neural networks]().

@@ -1,4 +1,4 @@
-## import package
+## Import package
 using Flux, DifferentialEquations, Zygote
 using DiffEqSensitivity
 using Distributions, Distances
@@ -31,7 +31,7 @@ ps = Flux.params(p);
 # Define Hill function
 hill(x; k = 10., K = 5.0) = @. k * x / (K + x)
 
-# Define Di matrix
+# Define the matrix ρ_i*A + d_i*B in Eq.(4)
 function sparse_D(ρ, d)
     M = length(ρ)
     D = Array{Any, 1}(undef, M)
@@ -48,13 +48,16 @@ end
 # Define the CME
 function CME!(du, u, p, t; Graph, D)
     rep_inter = re_inter(p)
-    # Define matrix Ch
+
+    # Define matrix C_h in Eq.(4)
     C = spdiagm(0 => [0.0; -hill(collect(1.0:N))], 1 => hill(collect(1.0:N)))
     for m = 1:length(D)
         P = @view u[:, m]
         du[:, m] = (D[m] + length(Graph[m]) * C) * P
         for j in Graph[m]
             P_neighbor = @view u[:, j]
+                        
+            # Define NN^{j->i}_θ in Eq.(4)
             NN_in = rep_inter([P; P_neighbor])
             G_in = spdiagm(0 => [-NN_in; 0.0], -1 => NN_in)
             du[:, m] += G_in * P
@@ -62,7 +65,7 @@ function CME!(du, u, p, t; Graph, D)
     end
 end
 
-# Initialize the ODE solver and Read parameter file and topology
+# Initialize the ODE solver
 tf = 12.0;
 tspan = (0, tf);
 tstep = 0.1;
@@ -72,14 +75,18 @@ Ds = Array{Any, 1}(undef, length(data_path))
 problems = Array{Any, 1}(undef, length(data_path))
 
 for i = 1:length(data_path)
-    VT = VTs[i]  
+    VT = VTs[i]
+
+    # Read parameter file
     params = readdlm("$(data_path[i])/params.csv", ',')  
     rho = Float64.(params[2:end, 1])
     d = Float64.(params[2:end, 2])
+    
     Ds[i] = sparse_D(rho, d)
     u0 = zeros(N+1, VT)
     u0[1, :] .= 1
 
+    # Read topology
     graph = Dict(); @load "$(data_path[i])/graph.bson" graph
     graphs[i] = graph
     problems[i] = ODEProblem((du, u, p, t) -> CME!(du, u, p, t; Graph=graphs[i], D=Ds[i]), u0, tspan, p)

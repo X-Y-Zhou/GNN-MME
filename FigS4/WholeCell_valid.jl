@@ -15,12 +15,12 @@ N = 39;
 # Load training set
 tf = 150
 tstep = 0.5
-tpoints = readdlm("$(data_path[1])/timepoints.csv", ',')[:]
-tstamp = length(tpoints)
-
 VT = 121
+
 ssa_path = "FigS4/data"
 data_path = ["$ssa_path/$(VT)_cells"]
+tpoints = readdlm("$(data_path[1])/timepoints.csv", ',')[:]
+tstamp = length(tpoints)
 VTs = fill(VT, length(data_path))
 ssa_proba = Array{Any, 1}(undef, length(data_path))
 
@@ -34,31 +34,31 @@ end
 hill(n::Union{Int64, Float64}; k=10.0, K=5.0) = k / (n + K)
 hill(ns::Vector; k=10.0, K=5.0) = [hill(ns[i], k=k, K=K) for i in 1:length(ns)]
 
-# Model initialization load training parameters
+# Model initialization and load training parameters
 train_path = "FigS4/model_params"
 
-# GNNintra1
+# Define GNNintra1 network
 intra1_struc = Chain(Dense(2*(N + 1), 20, tanh), Dense(20, N),
                      x -> leakyrelu.(x))
 p_intra1, re_intra1 = Flux.destructure(intra1_struc)
 @load "$train_path/p_intra1.bson" p_intra1
 rep_intra1 = re_intra1(p_intra1)
 
-# GNNintra2
+# Define GNNintra2 network
 intra2_struc = Chain(Dense(2*(N + 1), 20, tanh), Dense(20, N),
                      x -> leakyrelu.(x))
 p_intra2, re_intra2 = Flux.destructure(intra2_struc)
 @load "$train_path/p_intra2.bson" p_intra2
 rep_intra2 = re_intra2(p_intra2)
 
-# mRNA inter network
+# Define mRNA inter network
 Minter_struc = Chain(Dense(2*(N + 1), 20, tanh), Dense(20, N),
                        x -> leakyrelu.(x))
 p_Minter, re_Minter = Flux.destructure(Minter_struc)
 @load "$train_path/p_Minter.bson" p_Minter
 rep_Minter = re_Minter(p_Minter)
 
-# Protein inter network
+# Define Protein inter network
 Pinter_struc = Chain(Dense(2*(N + 1), 20, tanh), Dense(20, N),
                        x -> leakyrelu.(x))
 p_Pinter, re_Pinter = Flux.destructure(Pinter_struc)
@@ -66,8 +66,7 @@ p_Pinter, re_Pinter = Flux.destructure(Pinter_struc)
 rep_Pinter = re_Minter(p_Pinter)
 
 # Define the CME
-𝐀 = spdiagm(0 => -collect(0:N)) + spdiagm(1 => collect(1:N))  
-𝐁 = spdiagm(0 => [-ones(N); 0.0]) + spdiagm(-1 => ones(N)) 
+𝐁 = spdiagm(0 => -collect(0:N)) + spdiagm(1 => collect(1:N))
 GNNn(v) = spdiagm(0 => [-v; 0.0]) + spdiagm(-1 => v)
 
 function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
@@ -84,37 +83,52 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
 
     Gene_M = @view u[:, (Gene_Cell-1)*2+1]
     Gene_P = @view u[:, (Gene_Cell-1)*2+2]
+
+    # part A in Eq.(6)
     du[:, (Gene_Cell-1)*2+1] += k*GNNn(rep_intra1([Gene_M; Gene_P])) * Gene_M
 
     for i in 1:VT
         Mi = @view u[:, (i - 1)*2 + 1]
         Pi = @view u[:, (i - 1)*2 + 2]
+
         if i in Nucleus_Cells
             for j in mRNA_Nucleus_graph[i]
                 Mj = @view u[:, (j - 1)*2 + 1]
-                du[:, (i - 1)*2 + 1] += (Dn1 * 𝐀) * Mi
+                # #N^i_n * D^n_M * B * P_Mi in Eq.(6)
+                du[:, (i - 1)*2 + 1] += (Dn1 * 𝐁) * Mi
+                # part B in Eq.(6)
                 du[:, (j - 1)*2 + 1] += (Dn1 * GNNn(rep_Minter([Mj; Mi]))) * Mj
             end
 
             for j in Protein_Nucleus_graph[i]
                 Pj = @view u[:, (j - 1)*2 + 2]
-                du[:, (i - 1)*2 + 2] += (Dn2 * 𝐀) * Pi
+                # #N^i_n * D^n_P * B * P_Pi in Eq.(6)
+                du[:, (i - 1)*2 + 2] += (Dn2 * 𝐁) * Pi
+                # part D in Eq.(6)
                 du[:, (j - 1)*2 + 2] += (Dn2 * GNNn(rep_Pinter([Pj; Pi]))) * Pj
             end
+
         elseif i in Cytoplasm_Cells
-            du[:, (i - 1)*2 + 1] += (dc1 * 𝐀) * Mi
-            du[:, (i - 1)*2 + 2] += (dc2 * 𝐀) * Pi
+            # #N^i_c * D^c_M * B * P_Mi in Eq.(7)
+            du[:, (i - 1)*2 + 1] += (dc1 * 𝐁) * Mi
+            # #N^i_c * D^c_P * B * P_Pi in Eq.(7)
+            du[:, (i - 1)*2 + 2] += (dc2 * 𝐁) * Pi
+            # part J in Eq.(7)
             du[:, (i - 1)*2 + 2] += (λ*GNNn(rep_intra2([Pi; Mi]))) * Pi
 
             for j in mRNA_Cytoplasm_graph[i]
                 Mj = @view u[:, (j - 1)*2 + 1]
-                du[:, (i - 1)*2 + 1] += (Dc1 * 𝐀) * Mi
+                # d_M * B * P_Mi in Eq.(7)
+                du[:, (i - 1)*2 + 1] += (Dc1 * 𝐁) * Mi
+                # part G in Eq.(7)
                 du[:, (j - 1)*2 + 1] += (Dc1 * GNNn(rep_Minter([Mj; Mi]))) * Mj
             end
 
             for j in Protein_Cytoplasm_graph[i]
                 Pj = @view u[:, (j - 1)*2 + 2]
-                du[:, (i - 1)*2 + 2] += (Dc2 * 𝐀) * Pi
+                # d_P * B * P_Pi in Eq.(7)
+                du[:, (i - 1)*2 + 2] += (Dc2 * 𝐁) * Pi
+                # part K in Eq.(7)
                 du[:, (j - 1)*2 + 2] += (Dc2 * GNNn(rep_Pinter([Pj; Pi]))) * Pj
             end
         end
@@ -122,7 +136,9 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
         if i in Nucleus_Boundary_Cells
             for j in mRNA_Boundary_graph[i]
                 Mj = @view u[:, (j - 1)*2 + 1]
-                du[:, (i - 1)*2 + 1] += (Dnc1 * 𝐀) * Mi
+                # #N^i_c * D^nc_M * B * P_Mi in Eq.(6)
+                du[:, (i - 1)*2 + 1] += (Dnc1 * 𝐁) * Mi
+                # part H in Eq.(7)
                 du[:, (j - 1)*2 + 1] += (Dnc1 * GNNn(rep_Minter([Mj; Mi]))) * Mj
             end
         end
@@ -130,7 +146,9 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
         if i in Cytoplasm_Boundary_Cells
             for j in Protein_Boundary_graph[i]
                 Pj = @view u[:, (j - 1)*2 + 2]
-                du[:, (i - 1)*2 + 2] += (Dnc2 * 𝐀) * Pi
+                # #N^i_c * D^nc_P * B * P_Pi in Eq.(6) && #N^i_n * D^cn_P * B * P_Pi in Eq.(7)
+                du[:, (i - 1)*2 + 2] += (Dnc2 * 𝐁) * Pi
+                # part E in Eq.(6) && part L in Eq.(7)
                 du[:, (j - 1)*2 + 2] += (Dnc2 * GNNn(rep_Pinter([Pj; Pi]))) * Pj
             end
         end

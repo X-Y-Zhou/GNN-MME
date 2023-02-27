@@ -1,4 +1,4 @@
-# import package
+# Import package
 using Flux, DifferentialEquations, Zygote
 using DiffEqSensitivity
 using Distributions, Distances
@@ -23,7 +23,7 @@ ps = Flux.params(p);
 # Define Hill function
 hill(x; k = 10., K = 5.0) = @. k * x / (K + x)
 
-# Define Di matrix
+# Define matrix ρ_i*A + d_i*B in Eq.(4)
 function sparse_D(ρ, d)
     M = length(ρ)
     D = Array{Any, 1}(undef, M)
@@ -40,13 +40,16 @@ end
 # Define the CME
 function CME!(du, u, p, t; Graph, D)
     rep_inter = re_inter(p)
-    # Define matrix Ch
+
+    # Define matrix C_h in Eq.(4)
     C = spdiagm(0 => [0.0; -hill(collect(1.0:N))], 1 => hill(collect(1.0:N)))
     for m = 1:length(D)  
         P = @view u[:, m]
         du[:, m] = (D[m] + length(Graph[m]) * C) * P
         for j in Graph[m]
             P_neighbor = @view u[:, j]
+                        
+            # Define NN^{j->i}_θ in Eq.(4)
             NN_in = rep_inter([P; P_neighbor])
             G_in = spdiagm(0 => [-NN_in; 0.0], -1 => NN_in)
             du[:, m] += G_in * P
@@ -57,12 +60,16 @@ end
 # Number of cells
 VT = 16
 
-# Read parameter file and topology
+# Define topology
 grids = "E"
+
+# Read distribution data
 ssa_path = "Fig2a-c/data"
 test_ssa_path = "$(ssa_path)/$(VT)_cells_$grids"
-proba_list = [reshape(readdlm("$(test_ssa_path)/proba/cell_$(v).csv", ','), (N+1, 1, 201)) for v in 1:VT]  # Read distribution data
+proba_list = [reshape(readdlm("$(test_ssa_path)/proba/cell_$(v).csv", ','), (N+1, 1, 201)) for v in 1:VT]  
 test_ssa_proba = cat(proba_list..., dims=2)
+
+#Read parameter file
 params = readdlm("$(test_ssa_path)/params.csv", ',')
 rho = Float64.(params[2:end, 1])
 d = Float64.(params[2:end, 2])
