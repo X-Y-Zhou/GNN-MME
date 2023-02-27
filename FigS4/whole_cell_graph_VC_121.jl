@@ -24,7 +24,7 @@
 # +----+----+----+----+----+----+----+----+----+----+----+
 # 
 
-# Consider four directions,which are up, down, left, and right of the neighbor cells
+# Consider four directions
 dx = [-1,  1,  0,  0]
 dy = [ 0,  0, -1,  1]
 
@@ -36,20 +36,19 @@ function reacDiffusType(i, j; type="")
     # This function only checks whether i and j belong to the same medium (nucleus or cytoplasm) or satisfy the boundary penetration condition
     @assert type in ["Protein", "mRNA"] "'type' of function reacDiffusType Error: Available type: \"Protein\", \"mRNA\""
     
-    # Move freely within the nucleus and cytoplasm.
     if (i in Nucleus_Cells && j in Nucleus_Cells)
-        return "Nucleus Diffusion"  # Belong to nuclear diffusion.
+        return "Nucleus Diffusion"
     elseif (i in Cytoplasm_Cells && j in Cytoplasm_Cells)
-        return "Cytoplasm Diffusion"  # Belong to cytoplasmic diffusion.
+        return "Cytoplasm Diffusion"
     end
     
     if type == "Protein" && ((i in Cytoplasm_Cells && j in Nucleus_Cells) || 
                              (i in Nucleus_Cells  &&  j in Cytoplasm_Cells))
-        return "Boundary Diffusion"  # Protein bidirectionally diffuses in the cytoplasm and nucleus
+        return "Boundary Diffusion"
     elseif type == "mRNA" && (i in Nucleus_Cells && j in Cytoplasm_Cells)
-        return "Boundary Diffusion"  # mRNA diffuses from the nucleus to the cytoplasm
+        return "Boundary Diffusion"
     end
-    return "non-Diffusion"  # Unable to move if conditions are not met
+    return "non-Diffusion"
 end
 
 function addNeiborCell!(D::Dict, i::Int, j::Int)
@@ -61,51 +60,48 @@ function addNeiborCell!(D::Dict, i::Int, j::Int)
     end
 end
 
-# The size of the cell is sz * sz
+# Define size of the cell
 sz = 11
 n_cells = sz * sz
-topo_matrix = reshape(vec(1:sz^2), sz, sz)'  # Create the entire topology
 
+# Create the entire topology
+topo_matrix = reshape(vec(1:sz^2), sz, sz)'  
 
-# Cell 13 is where Gene is located
-Gene_Cell = Int((n_cells + 1) / 2)  # Gene's label
-Nucleus_Cells = [37:41; 48:52; 59:63; 70:74; 81:85]  # Labels belonging to the nucleus
-Cytoplasm_Cells = filter(x -> !(x in Nucleus_Cells), collect(1:n_cells))  # All except for the nucleus are cytoplasm.
-Nucleus_Boundary_Cells = [37:41; 48:sz:70; 52:sz:74; 81:85]  # Label at the nucleus boundary
-Cytoplasm_Boundary_Cells = [26:30; 36:sz:80; 42:sz:86; 92:96; 37:41; 48:sz:70; 52:sz:74; 81:85]  # Label at the cytoplasmic boundary
+# Define index of gene, nucleus and, cytoplasm
+Gene_Cell = Int((n_cells + 1) / 2) 
+Nucleus_Cells = [37:41; 48:52; 59:63; 70:74; 81:85]
+Cytoplasm_Cells = filter(x -> !(x in Nucleus_Cells), collect(1:n_cells)) 
+Nucleus_Boundary_Cells = [37:41; 48:sz:70; 52:sz:74; 81:85]
+Cytoplasm_Boundary_Cells = [26:30; 36:sz:80; 42:sz:86; 92:96; 37:41; 48:sz:70; 52:sz:74; 81:85]
 
-
-mRNA_Nucleus_graph = Dict()       # mRNA nuclear diffusion graph
-mRNA_Cytoplasm_graph = Dict()     # mRNA cytoplasmic diffusion graph
-mRNA_Boundary_graph = Dict()      # mRNA boundary diffusion graph
-Protein_Nucleus_graph = Dict()    # Protein nuclear diffusion graph
-Protein_Cytoplasm_graph = Dict()  # Protein cytoplasmic diffusion graph
-Protein_Boundary_graph = Dict()   # Protein boundary diffusion graph
+# Define diffusion graph
+mRNA_Nucleus_graph = Dict()
+mRNA_Cytoplasm_graph = Dict()
+mRNA_Boundary_graph = Dict()
+Protein_Nucleus_graph = Dict()
+Protein_Cytoplasm_graph = Dict()
+Protein_Boundary_graph = Dict()
 
 for i in 1:sz
     for j in 1:sz
         cell_idx = topo_matrix[i, j]
-        for k in 1:4  # Traversing four directions of cells which are up, down, left, right 
+        for k in 1:4
             ni = i + dx[k]
             nj = j + dy[k]
-            if ni <= sz && ni > 0 && nj <= sz && nj > 0     # If it does not exceed the boundary, check for penetration conditions
-                neibor_cell_idx = topo_matrix[ni, nj]  # Get the index of the neighbor cell
-
-                mRNA_diffus_type = reacDiffusType(cell_idx, neibor_cell_idx, type="mRNA")  # Diffusion type of mRNA
-                if mRNA_diffus_type == "Nucleus Diffusion" #&& !(neibor_cell_idx in mRNA_graph[cell_idx]) # If mRNA can circulate.
-                    # println("mRNA in cell $(cell_idx) can diffusion into cell $(neibor_cell_idx). ")
-                    # append!(mRNA_Nucleus_graph[cell_idx], neibor_cell_idx)
+            if ni <= sz && ni > 0 && nj <= sz && nj > 0
+                neibor_cell_idx = topo_matrix[ni, nj]
+                # Add diffusion type of mRNA
+                mRNA_diffus_type = reacDiffusType(cell_idx, neibor_cell_idx, type="mRNA")  
+                if mRNA_diffus_type == "Nucleus Diffusion"
                     addNeiborCell!(mRNA_Nucleus_graph, cell_idx, neibor_cell_idx)
                 elseif mRNA_diffus_type == "Cytoplasm Diffusion"
                     addNeiborCell!(mRNA_Cytoplasm_graph, cell_idx, neibor_cell_idx)
                 elseif mRNA_diffus_type == "Boundary Diffusion"
                     addNeiborCell!(mRNA_Boundary_graph, cell_idx, neibor_cell_idx)
                 end
-
-                Protein_diffus_type = reacDiffusType(cell_idx, neibor_cell_idx, type="Protein")  #Diffusion type of Protein
-                if Protein_diffus_type == "Nucleus Diffusion" #&& !(neibor_cell_idx in Protein_graph[cell_idx])  # If Protein can circulate.
-                    # println("Protein in cell $(cell_idx) can diffusion into cell $(neibor_cell_idx). ")
-                    # append!(Protein_graph[cell_idx], neibor_cell_idx)
+                #Add diffusion type of Protein
+                Protein_diffus_type = reacDiffusType(cell_idx, neibor_cell_idx, type="Protein")  
+                if Protein_diffus_type == "Nucleus Diffusion"
                     addNeiborCell!(Protein_Nucleus_graph, cell_idx, neibor_cell_idx)
                 elseif Protein_diffus_type == "Cytoplasm Diffusion"
                     addNeiborCell!(Protein_Cytoplasm_graph, cell_idx, neibor_cell_idx)
@@ -117,10 +113,3 @@ for i in 1:sz
         end
     end
 end
-# @show mRNA_Nucleus_graph;
-# @show mRNA_Cytoplasm_graph;
-# @show mRNA_Boundary_graph;
-# @show Protein_Nucleus_graph;
-# @show Protein_Cytoplasm_graph;
-# @show Protein_Boundary_graph;
-

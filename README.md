@@ -7,7 +7,7 @@ Efficient and scalable prediction of spatio-temporal stochastic gene expression 
 
 **File descriptions:**
 
-- "Figure2_a-c/data/2_cells_v1/proba/cell_1.csv" is the source data
+- "Figure2_a-c/data/2_cells_v1/proba/cell_1.csv" is the training data
 - "Figure2_a-c/data/2_cells_v1/proba/cell_1_pred.csv" is the predicted data
 - "Figure2_a-c/Birth_Death_train.jl" is the code for training.
 - "Figure2_a-c/Birth_Death_valid.jl" is the code for predicting Cell "ECUST".
