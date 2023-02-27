@@ -88,9 +88,9 @@ sol = Array(solve(problems[set], Tsit5(), p = ps[1], saveat=tstep))
 sol1 = sol[:,1,:]
 sol2 = sol[:,2,:]
 
-#plot 
+#plot
 fig_colors = reshape(palette(:tab10)[:], 1, :);
-fig_labels = reshape(["cell $i" for i in 1:VTs[i]], 1, VTs[i])
+fig_labels = ["cell1","cell2"]
 
 figures = Any[];
 fig_xticks = [false,true]
@@ -109,6 +109,6 @@ for i in 1:2
 end
 
 plot(figures..., layout = grid(2, 2), size = (800, 600))
-savefig("Figure2_a-c/results/Figure2a_set1.pdf")
+# savefig("Figure2_a-c/results/Figure2a_set1.pdf")
 #writedlm("$(ssa_path)/2_cells_v$i/proba/cell_1_pred.csv",sol1,',')
 #writedlm("$(ssa_path)/2_cells_v$i/proba/cell_2_pred.csv",sol2,',')
