@@ -174,12 +174,12 @@ for i in 1:6
     if i > 1
         f = plot!(yticks=false)
     end
-    f = plot!(SSA_proba[i], st=:scatter,label="GNN-MME")
-    f = plot!(SS_proba_list_v1[i, 2],label="SSA")
+    f = plot!(SSA_proba[i], st=:scatter,label="SSA")
+    f = plot!(SS_proba_list_v1[i, 2],label="GNN-MME")
     push!(Figures, f)
 end
 plot(Figures[[1; 2; 3; 4; 5; 6]]..., layout=grid(1, 6), xlim=(0, 30), ylims=(0, 0.25), size=(1100, 200))
-# savefig("Results/Figure2_f_AB.pdf")
+# savefig("Results/Fig2fAB.pdf")
 
 # version 3
 Figures = Any[]
@@ -190,9 +190,9 @@ for i in 1:6
     if i > 1
         f = plot!(yticks=false)
     end
-    f = plot!(SSA_proba[i], st=:scatter,label="GNN-MME")
-    f = plot!(SS_proba_list_v2[i, 1],label="SSA")
+    f = plot!(SSA_proba[i], st=:scatter,label="SSA")
+    f = plot!(SS_proba_list_v2[i, 1],label="GNN-MME")
     push!(Figures, f)
 end
 plot(Figures[[1; 2; 3; 4; 5; 6]]..., layout=grid(1, 6), xlim=(0, 20), ylims=(0, 0.50), size=(1100, 200))
-# savefig("Results/Figure2_f_CD.pdf")
+# savefig("Results/Fig2fCD.pdf")

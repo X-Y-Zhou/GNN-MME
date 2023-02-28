@@ -1,4 +1,4 @@
-# Code for Whole Cell Model validation
+# Code for Whole cell model validation
 using Flux, DifferentialEquations, Zygote
 using DiffEqSensitivity
 using Distributions, Distances

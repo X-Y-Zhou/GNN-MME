@@ -67,7 +67,7 @@ n_cells = sz * sz
 # Create the entire topology
 topo_matrix = reshape(vec(1:sz^2), sz, sz)'  
 
-# Define index of gene, nucleus and, cytoplasm
+# Define index of gene, nucleus and cytoplasm
 Gene_Cell = Int((n_cells + 1) / 2) 
 Nucleus_Cells = [37:41; 48:52; 59:63; 70:74; 81:85]
 Cytoplasm_Cells = filter(x -> !(x in Nucleus_Cells), collect(1:n_cells)) 
