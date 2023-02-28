@@ -1,4 +1,4 @@
-## Import package
+## Import packages
 using Flux, DifferentialEquations, Zygote
 using DiffEqSensitivity
 using Distributions, Distances
@@ -9,9 +9,9 @@ using Plots
 default(lw=3, msw=0., label=false)
 
 # Truncation
-N = 39;  
+N = 39;
 
-# Load training set
+# Load training sets
 ssa_path = "Fig2a-c/data"
 data_path = vcat(["$ssa_path/2_cells_v$(i)" for i in 1:3]...)
 VTs = [2, 2, 2]
@@ -77,7 +77,7 @@ problems = Array{Any, 1}(undef, length(data_path))
 for i = 1:length(data_path)
     VT = VTs[i]
 
-    # Read parameter file
+    # Load kinetic parameter file
     params = readdlm("$(data_path[i])/params.csv", ',')  
     rho = Float64.(params[2:end, 1])
     d = Float64.(params[2:end, 2])
@@ -86,13 +86,13 @@ for i = 1:length(data_path)
     u0 = zeros(N+1, VT)
     u0[1, :] .= 1
 
-    # Read topology
+    # Load topology
     graph = Dict(); @load "$(data_path[i])/graph.bson" graph
     graphs[i] = graph
     problems[i] = ODEProblem((du, u, p, t) -> CME!(du, u, p, t; Graph=graphs[i], D=Ds[i]), u0, tspan, p)
 end
 
-# Define the objective function
+# Define the loss function
 function loss_adjoint(problem, proba_true)
     sol = Array(solve(problem, Tsit5(), p = ps[1], saveat=tstep))
     tpoints = size(sol, 3)
@@ -108,3 +108,38 @@ function cb(prob, proba_true)
     end
     sum(loss) ./ nData
 end
+
+# Training model
+# Optimizer
+opt = ADAM()
+# Learning rate
+opt.eta = 0.01
+idx = 1:3
+nData = length(idx)
+train_probs = problems[idx]
+# SSA data
+labels = ssa_proba[idx]
+epoch = 300
+@time for e in 1:epoch
+    grads = Array{Any,1}(undef, nData)
+    tics = Array{Any, 1}(undef, nData)
+    Threads.@threads for i = 1:nData
+        tics[i] = @elapsed grads[i] = Flux.gradient(ps) do
+            loss_adjoint(train_probs[i], labels[i])
+        end
+    end
+
+    # Compute the mean gradient
+    mean_grads = reduce(.+, grads) ./ nData
+    Flux.Optimise.update!(opt, ps, mean_grads)
+    mloss = cb(train_probs, labels)
+
+    println("$(e)th epoch cost time: $(maximum(tics)). Loss: $(mloss)");
+    # Save neural network coefficients every 100 epochs
+    if e % 100 == 0
+    #    @save "Fig2a-c/p_$(e).bson" p
+    end
+end
+
+# Save final neural network coefficients
+@save "Fig2a-c/p_$(epoch).bson" p

@@ -1,4 +1,4 @@
-# Import package
+# Import packages
 using Flux, DifferentialEquations, Zygote
 using DiffEqSensitivity
 using Distributions, Distances
@@ -60,16 +60,16 @@ end
 # Number of cells
 VT = 16
 
-# Define topology
+# Select topology (letter "E")
 grids = "E"
 
-# Read distribution data
+# Load distribution data (SSA)
 ssa_path = "Fig2a-c/data"
 test_ssa_path = "$(ssa_path)/$(VT)_cells_$grids"
 proba_list = [reshape(readdlm("$(test_ssa_path)/proba/cell_$(v).csv", ','), (N+1, 1, 201)) for v in 1:VT]  
 test_ssa_proba = cat(proba_list..., dims=2)
 
-#Read parameter file
+# Load kinetic parameter file
 params = readdlm("$(test_ssa_path)/params.csv", ',')
 rho = Float64.(params[2:end, 1])
 d = Float64.(params[2:end, 2])
@@ -86,7 +86,7 @@ test_prob = ODEProblem((du, u, p, t) -> CME!(du, u, p, t; Graph=graph, D=sparse_
 # Solve the ODE
 @time sol = Array(solve(test_prob, Tsit5(), p=p, saveat=tstep));
 
-#Plot the selected cell and snapshots
+# Plot cells and snapshots of interest
 fig_colors = reshape(palette(:glasbey_hv_n256)[:], 1, :);
 fig_labels = reshape(["cell $i" for i in 1:VT], 1, VT)
 

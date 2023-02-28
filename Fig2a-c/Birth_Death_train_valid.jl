@@ -1,4 +1,4 @@
-# Import package
+# Import packages
 using Flux, DifferentialEquations, Zygote
 using DiffEqSensitivity
 using Distributions, Distances
@@ -32,7 +32,6 @@ ps = Flux.params(p);
 
 # Define Hill function
 hill(x; k = 10., K = 5.0) = @. k * x / (K + x)
-B = spdiagm(0 => [0.0; -hill(collect(1.0:N))], 1 => hill(collect(1.0:N)))
 
 # Define matrix ρ_i*A + d_i*B in Eq.(4)
 function sparse_D(ρ, d)
@@ -79,7 +78,7 @@ problems = Array{Any, 1}(undef, length(data_path))
 
 for i = 1:length(data_path)
     VT = VTs[i] 
-    # Read parameter file
+    # Load kinetic parameter file
     params = readdlm("$(data_path[i])/params.csv", ',')
     rho = Float64.(params[2:end, 1])
     d = Float64.(params[2:end, 2])
@@ -87,7 +86,7 @@ for i = 1:length(data_path)
     u0 = zeros(N+1, VT)
     u0[1, :] .= 1
 
-    # Read topology
+    # Load topology
     graph = Dict(); @load "$(data_path[i])/graph.bson" graph
     graphs[i] = graph
     problems[i] = ODEProblem((du, u, p, t) -> CME!(du, u, p, t; Graph=graphs[i], D=Ds[i]), u0, tspan, p)
@@ -97,7 +96,7 @@ end
 set = 1
 sol = Array(solve(problems[set], Tsit5(), p = ps[1], saveat=tstep))
 
-#Plot the selected cell and snapshots
+# Plot cells and snapshots of interest
 fig_colors = reshape(palette(:tab10)[:], 1, :);
 fig_labels = ["cell1","cell2"]
 

@@ -73,11 +73,11 @@ tf = 20.0;
 tspan = (0, tf);
 tstep = 0.1;
 
-# Version 1 with parameters ρ=2.5, d=0.5
+# Case 1 with parameters ρ=2.5, d=0.5
 version = 1
 table_list = [[0. for _ in 1:3] for _ in 1:6]
 
-# Read SSA data
+# Load SSA data
 SS_proba_list_v1 = Array{Any, 2}(undef, 6, 3)
 ssa_SS_P = readdlm("$path/data/$(VT)_cells_v$(version)/proba/cell_1.csv", ',')[:, end]
 
@@ -91,7 +91,7 @@ for i in 1:6
     for j in 1:3
         p_path = p_path_list[i][j]
 
-        # Load training parameters
+        # Load neural network coefficients
         @load "$path/model_params/$(p_path)" p
 
         # Initialize the ODE solver
@@ -104,7 +104,7 @@ for i in 1:6
 end
 table_v1 = hcat(table_list...)
 
-# version 3 with parameters ρ=1.0, d=1.0
+# Case 3 with parameters ρ=1.0, d=1.0
 version = 3
 table_list = [[0. for _ in 1:3] for _ in 1:6]
 
@@ -134,7 +134,7 @@ table_v2 = hcat(table_list...)
 # Plot HD
 fig_colors = reshape(palette(:tab10)[:], 1, :);
 
-# Plot version1
+# Plot Case 1
 version = 1
 table_v1_mean = mean(table_v1, dims=1)
 table_v1_std = std(table_v1, dims=1)
@@ -143,12 +143,12 @@ SSA_dist_10 = readdlm("$path/data/10_cells_SSA_distance_table_v$(version).csv", 
 SSA_dist_mean_10 = mean(SSA_dist_10, dims=1)
 SSA_dist_var_10 = var(SSA_dist_10, dims=1)
 SSA_dist_std_10 = std(SSA_dist_10, dims=1)
-f1 = plot(title="$VT cells version $version", xscale=:log10, xlims=(10^1.5, 10^5), ylims=(0, 0.25));
+f1 = plot(title="$VT cells topology extrapolation", xscale=:log10, xlims=(10^1.5, 10^5), ylims=(0, 0.25));
 f1 = plot!(sample_size_list[1:6], SSA_dist_mean_10[1:6], yerr=SSA_dist_std_10[1:6], label="$(VT) Cells SSA",  msw=2, c=fig_colors[1], msc=fig_colors[1])
 f1 = plot!(sample_size_list[1:6], table_v1_mean[1:6], yerr=table_v1_std[1:6], label="$(VT) Cells GNN-MME",  msw=2, c=fig_colors[2], msc=fig_colors[2], st=:scatter, ms=3)
 
 
-# Plot version3
+# Plot Case 3
 version = 3
 table_v2_mean = mean(table_v2, dims=1)
 table_v2_std = std(table_v2, dims=1)
@@ -157,20 +157,20 @@ SSA_dist_10 = readdlm("$path/data/10_cells_SSA_distance_table_v$(version).csv", 
 SSA_dist_mean_10 = mean(SSA_dist_10, dims=1)
 SSA_dist_var_10 = var(SSA_dist_10, dims=1)
 SSA_dist_std_10 = std(SSA_dist_10, dims=1)
-f2 = plot(title="$VT cells version $version", xscale=:log10, xlims=(10^1.5, 10^5), ylims=(0, 0.1));
+f2 = plot(title="$VT cells topology+kinetic extrapolation", xscale=:log10, xlims=(10^1.5, 10^5), ylims=(0, 0.1));
 f2 = plot!(sample_size_list[1:6], SSA_dist_mean_10[1:6], yerr=SSA_dist_std_10[1:6], label="$(VT) Cells SSA",  msw=2, c=fig_colors[1], msc=fig_colors[1])
 f2 = plot!(sample_size_list[1:6], table_v2_mean[1:6], yerr=table_v2_std[1:6], label="$(VT) Cells GNN-MME",  msw=2, c=fig_colors[2], msc=fig_colors[2], st=:scatter, ms=3)
 
-plot(f1, f2, size=(800, 300), ylims=(0, 0.25))
+plot(f1, f2, size=(1000, 300), ylims=(0, 0.25))
 # savefig("Results/Fig2d.pdf")
 
-# Plot GNN-MME and SSA distribution
-# version 1
+# Plot GNN-MME and SSA predicted distribution
+# Case 1
 Figures = Any[]
 version = 1 
 SSA_proba = [readdlm("$path/data/10_cells_v$(version)/sample/proba_scale_$(scale)_v1.csv", ',')[:, end] for scale in [scale_list; 7.0]]
 for i in 1:6
-    f = plot(title="scale $(scale_list[i])", grids=false, xticks=false)
+    f = plot(title="sample 10^$(scale_list[i])", grids=false, xticks=false)
     if i > 1
         f = plot!(yticks=false)
     end
@@ -181,12 +181,12 @@ end
 plot(Figures[[1; 2; 3; 4; 5; 6]]..., layout=grid(1, 6), xlim=(0, 30), ylims=(0, 0.25), size=(1100, 200))
 # savefig("Results/Fig2fAB.pdf")
 
-# version 3
+# Case 3
 Figures = Any[]
 version = 3  
 SSA_proba = [readdlm("$path/data/10_cells_v$(version)/sample/proba_scale_$(scale)_v1.csv", ',')[:, end] for scale in [scale_list; 7.0]]
 for i in 1:6
-    f = plot(title="scale $(scale_list[i])", grids=false, xticks=false)
+    f = plot(title="sample 10^$(scale_list[i])", grids=false, xticks=false)
     if i > 1
         f = plot!(yticks=false)
     end

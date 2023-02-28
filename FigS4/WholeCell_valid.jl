@@ -1,4 +1,4 @@
-# Code for Whole Cell Model validation
+# Code for whole cell model prediction
 using Flux, DifferentialEquations, Zygote
 using DiffEqSensitivity
 using Distributions, Distances
@@ -12,11 +12,11 @@ include("./aux_func.jl")
 # Truncation
 N = 39;
 
-# Load training set
 tf = 150
 tstep = 0.5
 VT = 121
 
+# Load training sets
 ssa_path = "FigS4/data"
 data_path = ["$ssa_path/$(VT)_cells"]
 tpoints = readdlm("$(data_path[1])/timepoints.csv", ',')[:]
@@ -34,7 +34,7 @@ end
 hill(n::Union{Int64, Float64}; k=10.0, K=5.0) = k / (n + K)
 hill(ns::Vector; k=10.0, K=5.0) = [hill(ns[i], k=k, K=K) for i in 1:length(ns)]
 
-# Model initialization and load training parameters
+# Model initialization and load neural network coefficients
 train_path = "FigS4/model_params"
 
 # Define GNNintra1 network
@@ -70,7 +70,7 @@ rep_Pinter = re_Minter(p_Pinter)
 GNNn(v) = spdiagm(0 => [-v; 0.0]) + spdiagm(-1 => v)
 
 function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
-    # Get the parameters of the cell
+    # Obtain the kinetic parameters of the cell
     k, K, λ, dn1, dn2, dc1, dc2 = p[1:7]
     Dn1, Dn2, Dc1, Dc2, Dnc1, Dnc2 = p[8:13]
     Gene_Cell = Cells_sets[1]
@@ -109,19 +109,16 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
             end
 
         elseif i in Cytoplasm_Cells
-            # #N^i_c * D^c_M * B * P_Mi in Eq.(7)
-            # !!!CORRECT => Part I[2]: d_M * B * P_Mi in Eq.(7)
+            # Part I[2]: d_M * B * P_Mi in Eq.(7)
             du[:, (i - 1)*2 + 1] += (dc1 * 𝐁) * Mi
-            # #N^i_c * D^c_P * B * P_Pi in Eq.(7)
-            # !!!CORRECT => Part M[3]: d_P * B * P_Pi in Eq.(7)
+            # Part M[3]: d_P * B * P_Pi in Eq.(7)
             du[:, (i - 1)*2 + 2] += (dc2 * 𝐁) * Pi
             # Part J in Eq.(7)
             du[:, (i - 1)*2 + 2] += (λ*GNNn(rep_intra2([Pi; Mi]))) * Pi
 
             for j in mRNA_Cytoplasm_graph[i]
                 Mj = @view u[:, (j - 1)*2 + 1]
-                # d_M * B * P_Mi in Eq.(7)
-                # !!!CORRECT => Part I[1]: #N^i_c * D^c_M * B * P_Mi
+                # Part I[1]: #N^i_c * D^c_M * B * P_Mi in Eq.(7)
                 du[:, (i - 1)*2 + 1] += (Dc1 * 𝐁) * Mi
                 # Part G in Eq.(7)
                 du[:, (j - 1)*2 + 1] += (Dc1 * GNNn(rep_Minter([Mj; Mi]))) * Mj
@@ -129,8 +126,7 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
 
             for j in Protein_Cytoplasm_graph[i]
                 Pj = @view u[:, (j - 1)*2 + 2]
-                # d_P * B * P_Pi in Eq.(7)
-                # !!!CORRECT => Part M[1]: #N^i_c * D^c_P * B * P_Pi
+                # Part M[1]: #N^i_c * D^c_P * B * P_Pi in Eq.(7)
                 du[:, (i - 1)*2 + 2] += (Dc2 * 𝐁) * Pi
                 # Part K in Eq.(7)
                 du[:, (j - 1)*2 + 2] += (Dc2 * GNNn(rep_Pinter([Pj; Pi]))) * Pj
@@ -160,7 +156,7 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
     end
 end
 
-# Read diffusion graph and Topology
+# Load diffusion graph and topology
 include("./whole_cell_graph_VC_$(VT).jl");
 Cells_sets = [Gene_Cell, Nucleus_Cells, Cytoplasm_Cells, Nucleus_Boundary_Cells, Cytoplasm_Boundary_Cells]  # Index of cells belonging to different parts
 graphs = [mRNA_Nucleus_graph, mRNA_Cytoplasm_graph, mRNA_Boundary_graph,
@@ -219,14 +215,14 @@ mRNA_Figures = Any[]
 Protein_Figures = Any[]
 
 for i in plt_idx
-    mRNA_subfig = plot(0:N, sol_Ms[:, t, i], c=fig_colors[i], label=mRNA_fig_labels[i],
+    mRNA_subfig = plot(0:N, sol_Ms[:, t, i], c=fig_colors[i], label=join([mRNA_fig_labels[i]," GNN-MME"]),
                        xlims=(0, 30), ylims=(0, 1.0), xticks=fig_xticks[i], yticks=fig_yticks[i], grids=false)
-    mRNA_subfig = plot!(0:N, ssa_Ms[:, t, i], c=fig_colors[i], st=:scatter, ms=5)
+    mRNA_subfig = plot!(0:N, ssa_Ms[:, t, i], c=fig_colors[i], st=:scatter, label=join([mRNA_fig_labels[i]," SSA"]),ms=5)
     push!(mRNA_Figures, mRNA_subfig)
 
-    Protein_subfig = plot(0:N, sol_Ps[:, t, i], c=fig_colors[i], label=Protein_fig_labels[i],
+    Protein_subfig = plot(0:N, sol_Ps[:, t, i], c=fig_colors[i], label=join([Protein_fig_labels[i]," GNN-MME"]),
                           xlims=(0, 30), ylims=(0, 0.5), xticks=fig_xticks[i], yticks=fig_yticks[i], grids=false)
-    Protein_subfig = plot!(0:N, ssa_Ps[:, t, i], c=fig_colors[i], st=:scatter, ms=5)
+    Protein_subfig = plot!(0:N, ssa_Ps[:, t, i], c=fig_colors[i], st=:scatter, label=join([Protein_fig_labels[i]," SSA"]),ms=5)
     push!(Protein_Figures, Protein_subfig)
 end
 

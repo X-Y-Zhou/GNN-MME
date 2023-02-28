@@ -1,4 +1,4 @@
-# Topology of whole Cell 11 * 11
+# Topology of Whole Cell 11 * 11
 # +----+----+----+----+----+----+---------+----+----+----+
 # |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 |
 # +----+----+----+----+----+----+----+----+----+----+----+
@@ -99,7 +99,7 @@ for i in 1:sz
                 elseif mRNA_diffus_type == "Boundary Diffusion"
                     addNeiborCell!(mRNA_Boundary_graph, cell_idx, neibor_cell_idx)
                 end
-                #Add diffusion type of Protein
+                # Add diffusion type of Protein
                 Protein_diffus_type = reacDiffusType(cell_idx, neibor_cell_idx, type="Protein")  
                 if Protein_diffus_type == "Nucleus Diffusion"
                     addNeiborCell!(Protein_Nucleus_graph, cell_idx, neibor_cell_idx)
