@@ -12,9 +12,9 @@ Efficient and scalable prediction of spatio-temporal stochastic gene expression 
 - "Fig2a-c/data/2_cells_v1/proba/cell_1.csv" is the training data
 - "Fig2a-c/data/2_cells_v1/proba/cell_1_pred.csv" is the predicted distribution
 - "Fig2a-c/Birth_Death_train.jl" is the training code.
-- "Fig2a-c/Birth_Death_valid.jl" is the predicting code for predicting cell "E","C","U","S" and "T".
+- "Fig2a-c/Birth_Death_valid.jl" is the predicting code for cell "E","C","U","S" and "T".
 - "p.bson" stores the trained parameters
-- "Results" summarizes the predicting results for Fig.2, FigS4 and FigS5 (inset).
+- "Results" summarizes the predicted results for Fig.2, FigS4 and FigS5 (inset).
 
 **Requirements:**
 

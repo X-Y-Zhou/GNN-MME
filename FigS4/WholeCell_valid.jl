@@ -84,7 +84,7 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
     Gene_M = @view u[:, (Gene_Cell-1)*2+1]
     Gene_P = @view u[:, (Gene_Cell-1)*2+2]
 
-    # part A in Eq.(6)
+    # Part A in Eq.(6)
     du[:, (Gene_Cell-1)*2+1] += k*GNNn(rep_intra1([Gene_M; Gene_P])) * Gene_M
 
     for i in 1:VT
@@ -96,7 +96,7 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
                 Mj = @view u[:, (j - 1)*2 + 1]
                 # #N^i_n * D^n_M * B * P_Mi in Eq.(6)
                 du[:, (i - 1)*2 + 1] += (Dn1 * 𝐁) * Mi
-                # part B in Eq.(6)
+                # Part B in Eq.(6)
                 du[:, (j - 1)*2 + 1] += (Dn1 * GNNn(rep_Minter([Mj; Mi]))) * Mj
             end
 
@@ -104,7 +104,7 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
                 Pj = @view u[:, (j - 1)*2 + 2]
                 # #N^i_n * D^n_P * B * P_Pi in Eq.(6)
                 du[:, (i - 1)*2 + 2] += (Dn2 * 𝐁) * Pi
-                # part D in Eq.(6)
+                # Part D in Eq.(6)
                 du[:, (j - 1)*2 + 2] += (Dn2 * GNNn(rep_Pinter([Pj; Pi]))) * Pj
             end
 
@@ -113,14 +113,14 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
             du[:, (i - 1)*2 + 1] += (dc1 * 𝐁) * Mi
             # #N^i_c * D^c_P * B * P_Pi in Eq.(7)
             du[:, (i - 1)*2 + 2] += (dc2 * 𝐁) * Pi
-            # part J in Eq.(7)
+            # Part J in Eq.(7)
             du[:, (i - 1)*2 + 2] += (λ*GNNn(rep_intra2([Pi; Mi]))) * Pi
 
             for j in mRNA_Cytoplasm_graph[i]
                 Mj = @view u[:, (j - 1)*2 + 1]
                 # d_M * B * P_Mi in Eq.(7)
                 du[:, (i - 1)*2 + 1] += (Dc1 * 𝐁) * Mi
-                # part G in Eq.(7)
+                # Part G in Eq.(7)
                 du[:, (j - 1)*2 + 1] += (Dc1 * GNNn(rep_Minter([Mj; Mi]))) * Mj
             end
 
@@ -128,7 +128,7 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
                 Pj = @view u[:, (j - 1)*2 + 2]
                 # d_P * B * P_Pi in Eq.(7)
                 du[:, (i - 1)*2 + 2] += (Dc2 * 𝐁) * Pi
-                # part K in Eq.(7)
+                # Part K in Eq.(7)
                 du[:, (j - 1)*2 + 2] += (Dc2 * GNNn(rep_Pinter([Pj; Pi]))) * Pj
             end
         end
@@ -138,7 +138,7 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
                 Mj = @view u[:, (j - 1)*2 + 1]
                 # #N^i_c * D^nc_M * B * P_Mi in Eq.(6)
                 du[:, (i - 1)*2 + 1] += (Dnc1 * 𝐁) * Mi
-                # part H in Eq.(7)
+                # Part H in Eq.(7)
                 du[:, (j - 1)*2 + 1] += (Dnc1 * GNNn(rep_Minter([Mj; Mi]))) * Mj
             end
         end
@@ -148,7 +148,7 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
                 Pj = @view u[:, (j - 1)*2 + 2]
                 # #N^i_c * D^nc_P * B * P_Pi in Eq.(6) && #N^i_n * D^cn_P * B * P_Pi in Eq.(7)
                 du[:, (i - 1)*2 + 2] += (Dnc2 * 𝐁) * Pi
-                # part E in Eq.(6) && part L in Eq.(7)
+                # Part E in Eq.(6) && part L in Eq.(7)
                 du[:, (j - 1)*2 + 2] += (Dnc2 * GNNn(rep_Pinter([Pj; Pi]))) * Pj
             end
         end
