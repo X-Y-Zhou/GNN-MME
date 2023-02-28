@@ -1,4 +1,4 @@
-# Code for Whole cell model validation
+# Code for Whole Cell Model validation
 using Flux, DifferentialEquations, Zygote
 using DiffEqSensitivity
 using Distributions, Distances
@@ -94,7 +94,7 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
         if i in Nucleus_Cells
             for j in mRNA_Nucleus_graph[i]
                 Mj = @view u[:, (j - 1)*2 + 1]
-                # #N^i_n * D^n_M * B * P_Mi in Eq.(6)
+                # Part C[1]: #N^i_n * D^n_M * B * P_Mi in Eq.(6)
                 du[:, (i - 1)*2 + 1] += (Dn1 * 𝐁) * Mi
                 # Part B in Eq.(6)
                 du[:, (j - 1)*2 + 1] += (Dn1 * GNNn(rep_Minter([Mj; Mi]))) * Mj
@@ -102,7 +102,7 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
 
             for j in Protein_Nucleus_graph[i]
                 Pj = @view u[:, (j - 1)*2 + 2]
-                # #N^i_n * D^n_P * B * P_Pi in Eq.(6)
+                # Part F[1]: #N^i_n * D^n_P * B * P_Pi in Eq.(6)
                 du[:, (i - 1)*2 + 2] += (Dn2 * 𝐁) * Pi
                 # Part D in Eq.(6)
                 du[:, (j - 1)*2 + 2] += (Dn2 * GNNn(rep_Pinter([Pj; Pi]))) * Pj
@@ -110,8 +110,10 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
 
         elseif i in Cytoplasm_Cells
             # #N^i_c * D^c_M * B * P_Mi in Eq.(7)
+            # !!!CORRECT => Part I[2]: d_M * B * P_Mi in Eq.(7)
             du[:, (i - 1)*2 + 1] += (dc1 * 𝐁) * Mi
             # #N^i_c * D^c_P * B * P_Pi in Eq.(7)
+            # !!!CORRECT => Part M[3]: d_P * B * P_Pi in Eq.(7)
             du[:, (i - 1)*2 + 2] += (dc2 * 𝐁) * Pi
             # Part J in Eq.(7)
             du[:, (i - 1)*2 + 2] += (λ*GNNn(rep_intra2([Pi; Mi]))) * Pi
@@ -119,6 +121,7 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
             for j in mRNA_Cytoplasm_graph[i]
                 Mj = @view u[:, (j - 1)*2 + 1]
                 # d_M * B * P_Mi in Eq.(7)
+                # !!!CORRECT => Part I[1]: #N^i_c * D^c_M * B * P_Mi
                 du[:, (i - 1)*2 + 1] += (Dc1 * 𝐁) * Mi
                 # Part G in Eq.(7)
                 du[:, (j - 1)*2 + 1] += (Dc1 * GNNn(rep_Minter([Mj; Mi]))) * Mj
@@ -127,6 +130,7 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
             for j in Protein_Cytoplasm_graph[i]
                 Pj = @view u[:, (j - 1)*2 + 2]
                 # d_P * B * P_Pi in Eq.(7)
+                # !!!CORRECT => Part M[1]: #N^i_c * D^c_P * B * P_Pi
                 du[:, (i - 1)*2 + 2] += (Dc2 * 𝐁) * Pi
                 # Part K in Eq.(7)
                 du[:, (j - 1)*2 + 2] += (Dc2 * GNNn(rep_Pinter([Pj; Pi]))) * Pj
@@ -136,7 +140,7 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
         if i in Nucleus_Boundary_Cells
             for j in mRNA_Boundary_graph[i]
                 Mj = @view u[:, (j - 1)*2 + 1]
-                # #N^i_c * D^nc_M * B * P_Mi in Eq.(6)
+                # Part C[2]: #N^i_c * D^nc_M * B * P_Mi in Eq.(6)
                 du[:, (i - 1)*2 + 1] += (Dnc1 * 𝐁) * Mi
                 # Part H in Eq.(7)
                 du[:, (j - 1)*2 + 1] += (Dnc1 * GNNn(rep_Minter([Mj; Mi]))) * Mj
@@ -146,7 +150,8 @@ function WholeCell_CME!(du, u, p, t; VT, Cells_sets, graphs)
         if i in Cytoplasm_Boundary_Cells
             for j in Protein_Boundary_graph[i]
                 Pj = @view u[:, (j - 1)*2 + 2]
-                # #N^i_c * D^nc_P * B * P_Pi in Eq.(6) && #N^i_n * D^cn_P * B * P_Pi in Eq.(7)
+                # Part F[2]: #N^i_c * D^nc_P * B * P_Pi in Eq.(6) &&
+                # Part M[2]: #N^i_n * D^cn_P * B * P_Pi in Eq.(7)
                 du[:, (i - 1)*2 + 2] += (Dnc2 * 𝐁) * Pi
                 # Part E in Eq.(6) && part L in Eq.(7)
                 du[:, (j - 1)*2 + 2] += (Dnc2 * GNNn(rep_Pinter([Pj; Pi]))) * Pj
