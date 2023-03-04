@@ -28,4 +28,4 @@ This repository deposits the Julia codes and data associated with the effeciency
 
 **The method is well described in:**
 
-* Z. Cao _et. al._ [Efficient and scalable prediction of spatio-temporal stochastic gene expression in cells and tissues using graph neural networks]().
+* Z. Cao _et. al._ [Efficient and scalable prediction of spatio-temporal stochastic gene expression in cells and tissues using graph neural networks](https://www.biorxiv.org/content/biorxiv/early/2023/03/01/2023.02.28.530379.full.pdf).
